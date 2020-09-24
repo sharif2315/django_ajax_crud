@@ -6,6 +6,9 @@
 {% block content %}
 <div class="container">
     <h1>Django Ajax CRUD</h1>
+
+    <button class="btn btn-primary" type="button"  data-toggle="modal" data-target="#addUserModal">Add New User</button>
+
     <div class="row">
       <div class="col-md-4 ">
         <h3>ADD USER</h3>
@@ -37,7 +40,7 @@
               <td class="userAddress userData" name="address">{{user.address}}</td>
               <td class="userAge userData" name="age">{{user.age}}</td>
               <td align="center">
-                  <button class="btn btn-success form-control" onClick="editUser({{user.id}})" data-toggle="modal" data-target="#myModal")">EDIT</button>
+                  <button class="btn btn-success form-control" onClick="editUser({{user.id}})" data-toggle="modal" data-target="#myModal">EDIT</button>
               </td>
               <td align="center">
                   <button class="btn btn-danger form-control" onClick="deleteUser({{user.id}})">DELETE</button>
@@ -77,10 +80,39 @@
       </div>
     </div>
   </div>
+
+  <!-- addUserModal -->
+  <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+          <h4 class="modal-title" id="myModalLabel">Add User</h4>
+        </div>
+        <form id="addNewUser" action="">
+        <div class="modal-body" id="new-user-modal-body">
+            <input class="form-control" id="new-user-modal-form-id" type="hidden" name="formId"/>
+            <label for="name">Name</label>
+            <input class="form-control" id="new-user-modal-form-name" type="text" name="formName"/>
+            <label for="address">Address</label>
+            <input class="form-control" id="new-user-modal-form-address" type="text" name="formAddress"/>
+            <label for="age">Age</label>
+            <input class="form-control" id="new-user-modal-form-age" type="number" name="formAge" min=10 max=100/>
+        </div>
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-primary" >Create</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+        </form>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 {% block javascript %}
 <script>
+
+// CREATE function
 // Create Django Ajax Call
 $("form#addUser").submit(function() {
     var nameInput = $('input[name="name"]').val().trim();
@@ -97,12 +129,14 @@ $("form#addUser").submit(function() {
             },
             dataType: 'json',
             success: function (data) {
+              console.log(data);
                 if (data.user) {
                   appendToUsrTable(data.user);
                 }
             }
         });
-      } else {
+      }
+      else {
         alert("All fields must have a valid value.");
     }
     $('form#addUser').trigger("reset");
@@ -125,6 +159,64 @@ function appendToUsrTable(user) {
 }
 
 
+// ADD NEW USER VIA MODAL
+// Create Django Ajax Call
+$("form#addNewUser").submit(function(e) {
+    e.preventDefault();
+    var nameInput = document.querySelector('#new-user-modal-form-name').value;
+    var addressInput = document.querySelector('#new-user-modal-form-address').value;
+    var ageInput = document.querySelector('#new-user-modal-form-age').value;
+    // var idInput = $('input[name="formId"]').val().trim();
+    // var nameInput = $('input[name="formName"]').val().trim();
+    // var addressInput = $('input[name="formAddress"]').val().trim();
+    // var ageInput = $('input[name="formAge"]').val().trim();
+    if (nameInput && addressInput && ageInput) {
+        // Create Ajax Call
+        $.ajax({
+            url: '{% url "crud_ajax_user_create" %}',
+            data: {
+                'name': nameInput,
+                'address': addressInput,
+                'age': ageInput
+            },
+            dataType: 'json',
+            success: function (data) {
+                if (data.user) {
+                  // console.log(data.user);
+                  addUsrToTable(data.user);
+                }
+            }
+        });
+       }
+       else {
+         console.log(addressInput);
+         alert("All fields must have a valid value.");
+    }
+    $('form#addNewUser').trigger("reset");
+    $('#addUserModal').modal('hide');
+    return false;
+});
+
+function addUsrToTable(user) {
+  $("#userTable > tbody:last-child").append(`
+        <tr id="user-${user.id}">
+            <td class="userName" name="name">${user.name}</td>
+            '<td class="userAddress" name="address">${user.address}</td>
+            '<td class="userAge" name="age">${user.age}</td>
+            '<td align="center">
+                <button class="btn btn-success form-control" onClick="editUser(${user.id})" data-toggle="modal" data-target="#myModal")">EDIT</button>
+            </td>
+            <td align="center">
+                <button class="btn btn-danger form-control" onClick="deleteUser(${user.id})">DELETE</button>
+            </td>
+        </tr>
+    `);
+}
+
+
+
+
+// EDIT FUNCTION
 // Create Django Ajax Call
 $("form#updateUser").submit(function() {
     var idInput = $('input[name="formId"]').val().trim();
@@ -148,8 +240,9 @@ $("form#updateUser").submit(function() {
                 }
             }
         });
-       } else {
-        alert("All fields must have a valid value.");
+       }
+       else {
+         alert("All fields must have a valid value.");
     }
     $('form#updateUser').trigger("reset");
     $('#myModal').modal('hide');
@@ -174,15 +267,19 @@ function updateToUserTabel(user){
         var attr = $(this).attr("name");
         if (attr == "name") {
           $(this).text(user.name);
-        } else if (attr == "address") {
+        }
+        else if (attr == "address") {
           $(this).text(user.address);
-        } else {
+        }
+        else {
           $(this).text(user.age);
         }
       });
 }
 
 
+
+// DELETE FUNCTION
 // Delete Django Ajax Call
 function deleteUser(id) {
   var action = confirm("Are you sure you want to delete this user?");

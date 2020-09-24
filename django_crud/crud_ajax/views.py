@@ -28,6 +28,28 @@ class CreateCrudUser(View):
         }
         return JsonResponse(data)
 
+
+class CreateUser(View):
+    def  get(self, request):
+        name1 = request.GET.get('name', None)
+        address1 = request.GET.get('address', None)
+        age1 = request.GET.get('age', None)
+
+        obj = CrudUser.objects.create(
+            name = name1,
+            address = address1,
+            age = age1
+        )
+
+        user = {'id':obj.id,'name':obj.name,'address':obj.address,'age':obj.age}
+
+        data = {
+            'user': user
+        }
+        return JsonResponse(data)
+
+
+
 class UpdateCrudUser(View):
     def  get(self, request):
         id1 = request.GET.get('id', None)
